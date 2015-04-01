@@ -1,14 +1,11 @@
 ---
-title: API Reference
+title: ProxyPay API Reference
 
 language_tabs:
   - shell
-  - ruby
-  - python
 
 toc_footers:
-  - <a href='#'>Sign Up for a Developer Key</a>
-  - <a href='http://github.com/tripit/slate'>Documentation Powered by Slate</a>
+  - <a href='http://www.proxypay.co.ao'>ProxyPay</a> is crafted with &#9825; by <a href='http://www.timeboxed.co.ao'>Timeboxed</a>
 
 includes:
   - errors
@@ -18,151 +15,407 @@ search: true
 
 # Introduction
 
-Welcome to the Kittn API! You can use our API to access Kittn API endpoints, which can get information on various cats, kittens, and breeds in our database.
+Welcome to the ProxyPay API! This API allows developers to easily integrate with Multicaixa to accept payments. You have endpoints to generate numeric references for payments and
+to receive notification of payments when they occur.
 
-We have language bindings in Shell, Ruby, and Python! You can view code examples in the dark area to the right, and you can switch the programming language of the examples with the tabs in the top right.
-
-This example API documentation page was created with [Slate](http://github.com/tripit/slate). Feel free to edit it and use it as a base for your own API's documentation.
+The ProxyPay API is organized around <a href="http://en.wikipedia.org/wiki/Representational_State_Transfer">REST</a>. We use built-in HTTP features, like HTTP authentication and HTTP verbs, which can be understood by off-the-shelf HTTP clients. <a href="http://www.json.org">JSON</a> will be returned in all responses from the API, including errors.
 
 # Authentication
 
+You authenticate to the ProxyPay API by providing your API key in the request. Be sure to keep it a secret!
+
+Authentication to the API occurs via HTTP Basic Auth. Provide `api` as the basic auth username and your API key as the password.
+
+All API requests must be made over HTTPS. Calls made over plain HTTP will fail. You must authenticate for all requests.
+
 > To authorize, use this code:
 
-```ruby
-require 'kittn'
-
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-```
-
-```python
-import kittn
-
-api = kittn.authorize('meowmeowmeow')
-```
-
 ```shell
-# With shell, you can just pass the correct header with each request
-curl "api_endpoint_here"
-  -H "Authorization: meowmeowmeow"
+curl "https://api.proxypay.co.ao" \
+  -u "api:reh8inj33o3algd2tpi6tkcnrqf8rjj2"
 ```
 
-> Make sure to replace `meowmeowmeow` with your API key.
-
-Kittn uses API keys to allow access to the API. You can register a new Kittn API key at our [developer portal](http://example.com/developers).
-
-Kittn expects for the API key to be included in all API requests to the server in a header that looks like the following:
-
-`Authorization: meowmeowmeow`
+> Make sure to replace `reh8inj33o3algd2tpi6tkcnrqf8rjj2` with your own API key.
 
 <aside class="notice">
-You must replace `meowmeowmeow` with your personal API key.
+You must replace `reh8inj33o3algd2tpi6tkcnrqf8rjj2` in the example with your own API key.
 </aside>
 
-# Kittens
+# Versioning
 
-## Get All Kittens
-
-```ruby
-require 'kittn'
-
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-api.kittens.get
-```
-
-```python
-import kittn
-
-api = kittn.authorize('meowmeowmeow')
-api.kittens.get()
-```
+By default, all requests receive the latest version of the API, which is currently `v1`. We encourage you to explicitly request this version via the `Accept` header.
 
 ```shell
-curl "http://example.com/api/kittens"
-  -H "Authorization: meowmeowmeow"
+curl "https://api.proxypay.co.ao" \
+  -H 'Accept: application/vnd.proxypay.v1+json'
 ```
 
-> The above command returns JSON structured like this:
+# References
 
-```json
-[
-  {
-    "id": 1,
-    "name": "Fluffums",
-    "breed": "calico",
-    "fluffiness": 6,
-    "cuteness": 7
-  },
-  {
-    "id": 2,
-    "name": "Isis",
-    "breed": "unknown",
-    "fluffiness": 5,
-    "cuteness": 10
-  }
-]
-```
+A reference must be created whenever you want to receive a payment of a given amount.
 
-This endpoint retrieves all kittens.
+To create one you must specify at least an `amount` and an `expiry date`. Additionaly you can specify any number of `custom_fields`.
 
-### HTTP Request
+A reference will have the following attributes (all attributes, except `custom_fields`, have  JSON strings as values):
 
-`GET http://example.com/kittens`
+Attribute | Description
+--------- | -----------
+id | A unique identifier assigned by the server.
+entity_id | A numeric string of length 5, that identifies your company in the Multicaixa system.
+number | A numeric string of length 9, assigned by the server that identifies the reference in the Multicaixa system.
+expiry_date | A date in the format `YYYY-MM-DD` (ISO 8601) and `WAT` timezone. The reference will be considered valid for payment until the end of the specified day.
+amount | The amount to be paid, specified with units and *exactly two decimal places*, with a `.` as separator. The amount can be a number up to `999999999.99`. All amounts are in `AOA` (Angolan Kwanza).
+status | This is a read-only attribute and will be set to `active`, `paid`, `expired` or `deleted`.
+custom_fields | This is a `map` with an arbitrary number of keys. All values must be strings. This can hold any information useful to reconcile the payment notification, because the payment event will inherit all the custom_field values. Examples include the invoice number, PO number, customer ID, etc..
 
-### Query Parameters
-
-Parameter | Default | Description
---------- | ------- | -----------
-include_cats | false | If set to true, the result will also include cats.
-available | true | If set to false, the result will include kittens that have already been adopted.
-
-<aside class="success">
-Remember — a happy kitten is an authenticated kitten!
-</aside>
-
-## Get a Specific Kitten
-
-```ruby
-require 'kittn'
-
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-api.kittens.get(2)
-```
-
-```python
-import kittn
-
-api = kittn.authorize('meowmeowmeow')
-api.kittens.get(2)
-```
+## Get All References
 
 ```shell
-curl "http://example.com/api/kittens/3"
-  -H "Authorization: meowmeowmeow"
+curl "https://api.proxypay.co.ao/references" \
+  -u "api:reh8inj33o3algd2tpi6tkcnrqf8rjj2"
 ```
 
 > The above command returns JSON structured like this:
 
 ```json
 {
-  "id": 2,
-  "name": "Isis",
-  "breed": "unknown",
-  "fluffiness": 5,
-  "cuteness": 10
+  "references": [
+    {
+      "status": "active",
+      "number": "664654696",
+      "id": "8uW7O0N4LvOuQsYAFc",
+      "expiry_date": "2015-11-05",
+      "custom_fields": {
+        "invoice": "2015/0121"
+      },
+      "amount": "5000.00"
+    },
+    {
+      "status": "deleted",
+      "number": "234123215",
+      "id": "8uVlQn87qCPnF9U3Um",
+      "expiry_date": "2015-02-15",
+      "custom_fields": {
+        "invoice": "2015/0145"
+      },
+      "amount": "12222.00"
+    },
+    {
+      "status": "paid",
+      "number": "283749832",
+      "id": "8uVigNJ7Jj4hvVMdhQ",
+      "expiry_date": "2015-02-28",
+      "custom_fields": {
+        "invoice": "2015/0118"
+      },
+      "amount": "5000.00"
+    },
+    {
+      "status": "expired",
+      "number": "293840932",
+      "id": "8uUIvA8jlPKnSwwKPI",
+      "expiry_date": "2014-12-12",
+      "custom_fields": {
+        "invoice": "2014/0097"
+      },
+      "amount": "11123.23"
+    }
+  ],
+  "meta": {
+    "total_count": 4,
+    "offset": 0,
+    "limit": 20
+  }
 }
 ```
 
-This endpoint retrieves a specific kitten.
-
-<aside class="warning">If you're not using an administrator API key, note that some kittens will return 403 Forbidden if they are hidden for admins only.</aside>
+This endpoint retrieves all references in the system, sorted by descending order of creation date.
 
 ### HTTP Request
 
-`GET http://example.com/kittens/<ID>`
+`GET https://api.proxypay.co.ao/references`
+
+### Query Parameters
+
+Parameter | Default | Description
+--------- | ------- | -----------
+limit | 20 | Max. number of references to return.
+offset | 0 | Skip `offset` records. Usefull for pagination.
+state | - | Filter parameter. If set to either `active`, `deleted`, `expired` or `paid` will return only references with that status value.
+q | - | Filter parameter. will return any reference for which the value of the `q` parameter matches the beginning of the reference `number` or any of the `custom_fields`.
+
+## Get a Specific Reference
+
+```shell
+curl "https://api.proxypay.co.ao/references/8uVigNJ7Jj4hvVMdhQ" \
+  -u "api:reh8inj33o3algd2tpi6tkcnrqf8rjj2"
+```
+
+> The above command returns JSON structured like this:
+
+```json
+{
+  "reference": {
+    "updated_at": "2015-02-20T17:30:00Z",
+    "status": "paid",
+    "number": "283749832",
+    "id": "8uVigNJ7Jj4hvVMdhQ",
+    "expiry_date": "2015-02-28",
+    "entity_id": "99999",
+    "custom_fields": {
+      "invoice": "2014/0097"
+    },
+    "created_at": "2015-02-01T08:36:37Z",
+    "amount": "5000.00"
+  }
+}
+```
+
+This endpoint retrieves a specific reference.
+
+### HTTP Request
+
+`GET https://api.proxypay.co.ao/references/<ID>`
 
 ### URL Parameters
 
 Parameter | Description
 --------- | -----------
-ID | The ID of the cat to retrieve
+ID | The ID of the reference to retrieve
 
+
+## Generate a New Reference
+
+```shell
+curl -XPOST "https://api.proxypay.co.ao/references" \
+  -u "api:reh8inj33o3algd2tpi6tkcnrqf8rjj2" \
+  -H 'Content-Type: application/json' \
+  -d '{"reference": { "amount": "25000.00", "expiry_date": "2015-05-15", "custom_fields": {"invoice": "2015/0399"}}}'
+```
+
+> The above command returns JSON structured like this:
+
+```json
+{
+  "reference": {
+    "updated_at": "2015-05-10T17:43:10Z",
+    "status": "active",
+    "number": "892374833",
+    "id": "8uWqsbFsHNUzS19DY8",
+    "expiry_date": "2015-05-15",
+    "entity_id": "99999",
+    "custom_fields": {
+      "invoice": "2015/0399"
+    },
+    "created_at": "2015-05-10T17:43:10Z",
+    "amount": "25000.00"
+  }
+}
+```
+
+This endpoint generates a new payment reference for a given amount.
+
+### HTTP Request
+
+`POST https://api.proxypay.co.ao/references`
+
+### URL Parameters
+
+Parameter | Description
+--------- | -----------
+
+
+# Payment Events - Pull API
+
+This endpoint can be used to fetch any new payment events that occured in the system. It works conceptually as a queue, and all payments
+are returned in the order they ocurred.
+
+You can retrieve up to 100 payments in a single call. All payments returned will be reserved for 120 seconds, meaning that they are not returned in a subsequent call to the endpoint. If an acknowledgement indicating that they have been sucessfully processed is not sent within that timeframe, they will become available again.
+
+A Payment event will have the following attributes (all attributes, except `custom_fields`, have JSON strings as values):
+
+Attribute | Description
+--------- | -----------
+id | A unique identifier of the payment event.
+entity_id | A numeric string of length 5, that identifies your company in the Multicaixa system.
+reference_number | A numeric string of length 9, that identifies the reference originating the payment in the Multicaixa system.
+reference_id | The unique identifier of the reference that originated the payment
+datetime | Date and time in UTC (ISO 8601) when the payment occurred.
+amount | The amount to be paid, specified with units and *exactly two decimal places*, with a `.` as separator. The amount can be a number up to `999999999.99`. All amounts are in `AOA` (Angolan Kwanza).
+terminal_type | The type of terminal that accepted the payment. `01` for ATM, `05` or `06` for Internet Banking.
+terminal_transaction_id | Local identifier of the payment in the terminal. It matches the Transaction ID printed in the ATM receipt.
+terminal_location | Description of the location where the payment ocurred (valid for payments in ATM's)
+custom_fields | This is copied from the reference that originated the payment, for reconcilitation purposes.
+
+## Fetch New Payments
+
+```shell
+curl "https://api.proxypay.co.ao/events/payments" \
+  -u "api:reh8inj33o3algd2tpi6tkcnrqf8rjj2"
+```
+
+> The above command returns JSON structured like this:
+
+```json
+{
+  "payments": [
+    {
+      "terminal_type": "01",
+      "terminal_transaction_id": "00123",
+      "terminal_location": "Luanda",
+      "terminal_id": "00456",
+      "reference_number": "283749832",
+      "reference_id": "8uVigNJ7Jj4hvVMdhQ",
+      "id": "449500352608",
+      "entity_id": "99999",
+      "datetime": "2015-05-10T17:43:10Z",
+      "custom_fields": {
+        "invoice": "2014/0097"
+      },
+      "amount": "5000.00"
+    }
+  ]
+}
+```
+
+This endpoint retrieves all Payment events that have not been acknowledged.
+
+### HTTP Request
+
+`GET https://api.proxypay.co.ao/events/payments`
+
+### Query Parameters
+
+Parameter | Default | Description
+--------- | ------- | -----------
+n | 100 | Max. number of payment events to return. This must be between `1` and `100`
+
+
+<aside class="notice">
+You must must acknowledge the payment events after processing them.
+</aside>
+
+## Acknowledge a Payment
+
+```shell
+curl -XDELETE "https://api.proxypay.co.ao/events/payments/449500352608" \
+  -u "api:reh8inj33o3algd2tpi6tkcnrqf8rjj2"
+```
+
+> The above command returns HTTP Status `204 No Content`.
+
+This endpoint acknowledges that a specific payment has been processed.
+
+### HTTP Request
+
+`DELETE https://api.proxypay.co.ao/events/payments/<ID>`
+
+### URL Parameters
+
+Parameter | Description
+--------- | -----------
+ID | The ID of the payment to acknowledge as processed
+
+
+Note: If your HTTP client doesn't allow sending a request with the HTTP verb `DELETE`, you can use `POST` instead and pass the additional URL parameter `_method=delete`.
+
+
+## Acknowledge Multiple Payments
+
+```shell
+curl -XDELETE "https://api.proxypay.co.ao/events/payments" \
+  -u "api:reh8inj33o3algd2tpi6tkcnrqf8rjj2"
+  -H 'Content-Type: application/json'
+  -d '{"ids": ["449500352608", "449500352609"]}'
+```
+
+> The above command returns HTTP Status `204 No Content`.
+
+This endpoint acknowledges that multiple payments have been processed.
+
+### HTTP Request
+
+`DELETE https://api.proxypay.co.ao/events/payments`
+
+### URL Parameters
+
+Parameter | Description
+--------- | -----------
+
+Note: If your HTTP client doesn't allow sending a request with the HTTP verb `DELETE`, you can use `POST` instead and pass the additional URL parameter `_method=delete`.
+
+
+---
+
+
+
+# Payment Events - Push API
+
+As an alternative to the Pull API, ProxyPay can instead push new payment events to a URL provided by you.
+
+You must provide an HTTP or HTTPS endpoint that is publicly accessible over the Internet.
+
+## Callback
+
+Your callback endpoint will receive the data encoded as JSON.
+
+In some situations, you may receive the same payment event multiple times. You should be able to detect and ignore duplicates, using the payment id.
+
+To authenticate the request, we include an HMAC-SHA-256 signature in every request. In addition to all the attributes of the payment event, already detailed in the Pull API, we also submit the following extra attributes:
+
+Attribute | Description
+--------- | -----------
+token | A randomly generated, one time token.
+signature | Signature calculated as `HMAC-SHA-256(key, token)`, where key is your API Key. The signature is then Hex encoded.
+
+
+> Your endpoint will receive a POST request with a JSON structured like this:
+
+```json
+{
+  "payment": {
+    "terminal_type": "01",
+    "terminal_transaction_id": "00123",
+    "terminal_location": "Luanda",
+    "terminal_id": "00456",
+    "reference_number": "283749832",
+    "reference_id": "8uVigNJ7Jj4hvVMdhQ",
+    "id": "449500352608",
+    "entity_id": "99999",
+    "datetime": "2015-05-10T17:43:10Z",
+    "custom_fields": {
+      "invoice": "2014/0097"
+    },
+    "amount": "5000.00"
+  },
+  "meta": {
+    "token": "2c1urcc1kshj9qs1ktj4ln8ure21n2up",
+    "signature": "F01EA29080468ACA91785903D2029DE4BB6603398EBADECF77ADA554167B1947"
+  }
+}
+```
+
+Your endpoint must return `HTTP Status 200` after successfully processing the event. Any other status code will be considered an error and ProxyPay will retry after 10 minutes.
+
+*Sample values:*
+
+  * `API Key`: `h5a4e6ctej01hn9agh7uggt5n8r29ups`
+  * `token`: `2c1urcc1kshj9qs1ktj4ln8ure21n2up`
+  * `signature`: `F01EA29080468ACA91785903D2029DE4BB6603398EBADECF77ADA554167B1947`
+
+`signature` == `HMAC-SHA-256`(`API Key`, `token`)
+
+
+### HTTP Request
+
+`POST http(s)://<your callback url>`
+
+### Query Parameters
+
+Parameter | Default | Description
+--------- | ------- | -----------
+
+
+### Validating the Signature
+
+To validate the signature, simply calculate the expected signature using `HMAC-SHA-256(key, token)`, where key is your API Key, and compare it to the signature in the request.
