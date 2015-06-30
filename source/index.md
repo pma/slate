@@ -345,10 +345,6 @@ Parameter | Description
 Note: If your HTTP client doesn't allow sending a request with the HTTP verb `DELETE`, you can use `POST` instead and pass the additional URL parameter `_method=delete`.
 
 
----
-
-
-
 # Payment Events - Push API
 
 As an alternative to the Pull API, ProxyPay can instead push new payment events to a URL provided by you.
@@ -359,14 +355,14 @@ You must provide an HTTP or HTTPS endpoint that is publicly accessible over the 
 
 Your callback endpoint will receive the data encoded as JSON.
 
-In some situations, you may receive the same payment event multiple times. You should be able to detect and ignore duplicates, using the payment id.
+In some situations, such as a timeout when calling your endpoint, the same payment may be submitted multiple times. You should make sure your logic is idempotent.
 
 To authenticate the request, we include an HMAC-SHA-256 signature in every request. In addition to all the attributes of the payment event, already detailed in the Pull API, we also submit the following extra attributes:
 
 Attribute | Description
 --------- | -----------
-token | A randomly generated, one time token.
-signature | Signature calculated as `HMAC-SHA-256(key, token)`, where key is your API Key. The signature is then Hex encoded.
+timestamp | A Unix Epoch timestamp generated at the time of the request
+signature | Signature calculated as `HMAC-SHA-256(key, timestamp+checksum_data)`, where key is your API Key, and represented in hex digits.
 
 
 > Your endpoint will receive a POST request with a JSON structured like this:
@@ -384,26 +380,45 @@ signature | Signature calculated as `HMAC-SHA-256(key, token)`, where key is you
     "entity_id": "99999",
     "datetime": "2015-05-10T17:43:10Z",
     "custom_fields": {
-      "invoice": "2014/0097"
+      "invoice": "2014/0097",
+      "customer_name": "Acme"
     },
     "amount": "5000.00"
   },
   "meta": {
-    "token": "2c1urcc1kshj9qs1ktj4ln8ure21n2up",
-    "signature": "F01EA29080468ACA91785903D2029DE4BB6603398EBADECF77ADA554167B1947"
+    "timestamp": "1428262214",
+    "signature": "809427D33F649EDB8A7C123D76E5B426C37DFE6B56C9160509CFCAA01C86F844"
   }
 }
 ```
 
 Your endpoint must return `HTTP Status 200` after successfully processing the event. Any other status code will be considered an error and ProxyPay will retry after 10 minutes.
 
-*Sample values:*
+The `checksum_data` is calculated by appending the values of all attributes in the following order:
 
-  * `API Key`: `h5a4e6ctej01hn9agh7uggt5n8r29ups`
-  * `token`: `2c1urcc1kshj9qs1ktj4ln8ure21n2up`
-  * `signature`: `F01EA29080468ACA91785903D2029DE4BB6603398EBADECF77ADA554167B1947`
+`checksum_data` = `amount` + `datetime` + `entity_id` + `id` + `reference_id` + `reference_number` + `terminal_id` + `terminal_location` + `terminal_transaction_id` + `terminal_type` + *customer_fields_in_alphabetical_order*
 
-`signature` == `HMAC-SHA-256`(`API Key`, `token`)
+In the example, *customer_fields_in_alphabetical_order* = `customer_name` + `invoice`
+
+*Example*
+
+**API Key**
+
+`h5a4e6ctej01hn9agh7uggt5n8r29ups`
+
+**timestamp**
+
+`1428262214`
+
+**checksum_data**
+
+ `5000.002015-05-10T17:43:10Z999994495003526088uVigNJ7Jj4hvVMdhQ28374983200456Luanda0012301Acme2014/0097`
+
+**signature**
+
+`809427D33F649EDB8A7C123D76E5B426C37DFE6B56C9160509CFCAA01C86F844`
+
+`signature` == `HMAC-SHA-256`(`API Key`, `timestamp`+`checksum_data`)
 
 
 ### HTTP Request
@@ -418,4 +433,4 @@ Parameter | Default | Description
 
 ### Validating the Signature
 
-To validate the signature, simply calculate the expected signature using `HMAC-SHA-256(key, token)`, where key is your API Key, and compare it to the signature in the request.
+To validate the signature, simply calculate the expected signature using `HMAC-SHA-256`, compare it to the signature in the request and reject the data if they are different.
