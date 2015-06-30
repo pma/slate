@@ -10,7 +10,7 @@ Error Code | Meaning
 404 | Not Found -- The specified resource could not be found
 405 | Method Not Allowed -- You tried to access a resource with an invalid HTTP method
 406 | Not Acceptable -- You requested a format that isn't json
-406 | Unprocessable Entity -- You requested includes invalid fields. Check the response body for details.
+422 | Unprocessable Entity -- Your request includes invalid fields. Check the response body for details.
 429 | Too Many Requests -- You're exceding the API rate limit! Reduce the number of requests / minute.
 500 | Internal Server Error -- We had a problem with our server. Try again later.
 503 | Service Unavailable -- We're temporarially offline for maintanance. Please try again later.
