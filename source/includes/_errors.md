@@ -13,4 +13,4 @@ Error Code | Meaning
 422 | Unprocessable Entity -- Your request includes invalid fields. Check the response body for details.
 429 | Too Many Requests -- You're exceding the API rate limit! Reduce the number of requests / minute.
 500 | Internal Server Error -- We had a problem with our server. Try again later.
-503 | Service Unavailable -- We're temporarially offline for maintanance. Please try again later.
+503 | Service Unavailable -- We're temporarily offline for maintenance. Please try again later.
