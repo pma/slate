@@ -141,7 +141,7 @@ Parameter | Default | Description
 --------- | ------- | -----------
 limit | 20 | Max. number of references to return.
 offset | 0 | Skip `offset` records. Usefull for pagination.
-state | - | Filter parameter. If set to either `active`, `deleted`, `expired` or `paid` will return only references with that status value.
+status | - | Filter parameter. If set to either `active`, `deleted`, `expired` or `paid` will return only references with that status value.
 q | - | Filter parameter. will return any reference for which the value of the `q` parameter matches the beginning of the reference `number` or any of the `custom_fields`.
 
 ## Get a Specific Reference
